@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -12,7 +13,7 @@ type todo struct {
 	Todo string `json:"todo"`
 }
 
-var todos []todo = []todo{
+var todos = []todo{
 	{ID: 1, Todo: "Buy milk"},
 	{ID: 2, Todo: "Buy eggs"},
 	{ID: 3, Todo: "Buy bread"},
@@ -27,7 +28,8 @@ func main() {
 	r.HandleFunc("/todo/{id:[0-9]+}", UpdateTodo).Methods("PUT")
 	r.HandleFunc("/todo/{id:[0-9]+}", DeleteTodo).Methods("DELETE")
 	r.HandleFunc("/todo", ListTodo).Methods("GET")
-	http.ListenAndServe(":8000", r)
+	log.Println("Listening on port 8080")
+	http.ListenAndServe(":8080", r)
 }
 
 func CreateTodo(w http.ResponseWriter, r *http.Request) {
@@ -102,5 +104,15 @@ func DeleteTodo(w http.ResponseWriter, r *http.Request) {
 
 func ListTodo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(todos)
+	resp := make([]todo, len(todos))
+	copy(resp, todos)
+
+	if r.URL.Query().Get("reverse") == "true" {
+		length := len(resp)
+		for i := 0; i < length/2; i++ {
+			resp[i], resp[length-i-1] = resp[length-i-1], resp[i]
+		}
+	}
+
+	json.NewEncoder(w).Encode(resp)
 }
