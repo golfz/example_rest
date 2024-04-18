@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -28,8 +29,41 @@ func main() {
 	r.HandleFunc("/todo/{id:[0-9]+}", UpdateTodo).Methods("PUT")
 	r.HandleFunc("/todo/{id:[0-9]+}", DeleteTodo).Methods("DELETE")
 	r.HandleFunc("/todo", ListTodo).Methods("GET")
+
+	r.HandleFunc("/accept", Accept).Methods(http.MethodPost)
+	r.HandleFunc("/any", Any)
+
 	log.Println("Listening on port 8080")
 	http.ListenAndServe(":8080", r)
+}
+
+func printRequest(r *http.Request) {
+	log.Println("----------------------------------------")
+	log.Println("method:", r.Method)
+	log.Printf("received request with path: %s", r.URL.Path)
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("error reading body: %v", err)
+	}
+	log.Printf("received request with body: %s", string(body))
+
+	headers := r.Header
+	for key, value := range headers {
+		log.Printf("header: %s, value: %s", key, value)
+	}
+}
+
+func Any(w http.ResponseWriter, r *http.Request) {
+	printRequest(r)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("OK"))
+}
+
+func Accept(w http.ResponseWriter, r *http.Request) {
+	printRequest(r)
+	w.WriteHeader(http.StatusAccepted)
+
 }
 
 func CreateTodo(w http.ResponseWriter, r *http.Request) {
